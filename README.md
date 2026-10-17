@@ -1,16 +1,16 @@
 # TP Seguridad en Aplicaciones Web - Grupo N°4
 
-Laboratorio práctico para la demostración de vulnerabilidades encadenadas en una plataforma de encuestas universitarias[cite: 1, 2].
+Laboratorio práctico para la demostración de vulnerabilidades encadenadas en una plataforma de encuestas universitarias.
 
-**Universidad Tecnológica Nacional - Facultad Regional Buenos Aires (UTN.BA)**[cite: 1]
+**Universidad Tecnológica Nacional - Facultad Regional Buenos Aires (UTN.BA)**
 
 **Integrantes:**
-* Herrera, Federico (`feherrera@frba.utn.edu.ar`)[cite: 1]
-* Napolillo, Luciana (`lnapolillo@frba.utn.edu.ar`)[cite: 1]
-* Rodríguez, Ignacio (`irodriguezmartin@frba.utn.edu.ar`)[cite: 1]
-* Rosman, Tomas (`tomasrosman@frba.utn.edu.ar`)[cite: 1]
+* Herrera, Federico (`feherrera@frba.utn.edu.ar`)
+* Napolillo, Luciana (`lnapolillo@frba.utn.edu.ar`)
+* Rodríguez, Ignacio (`irodriguezmartin@frba.utn.edu.ar`)
+* Rosman, Tomas (`tomasrosman@frba.utn.edu.ar`)
 
-**Profesores:** Ing. Vilanova, Gonzalo | Ing. Fuentes, Nicolás | Novoa, Germán | Berruto, Maximiliano[cite: 1]
+**Profesores:** Ing. Vilanova, Gonzalo | Ing. Fuentes, Nicolás | Novoa, Germán | Berruto, Maximiliano
 
 ---
 
@@ -38,6 +38,6 @@ Toda la plataforma crea automáticamente la base de datos y los archivos de log 
 ### 1. Clonar el repositorio e instalar Flask
 En Kali Linux (o cualquier distribución basada en Debian/Ubuntu):
 ```bash
-git clone [https://github.com/ignacioRodriguezM/tpGrupo4Seguridad.git](https://github.com/ignacioRodriguezM/tpGrupo4Seguridad.git)
+git clone https://github.com/ignacioRodriguezM/tpGrupo4Seguridad.git
 cd tpGrupo4Seguridad
 sudo apt update && sudo apt install -y python3-flask
