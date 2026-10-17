@@ -19,6 +19,6 @@ Toda la plataforma corre en un único archivo (`app.py`) que crea automáticamen
 ### 1. Clonar el repositorio e instalar Flask
 En Kali Linux (o cualquier distribución basada en Debian/Ubuntu):
 ```bash
-git clone <URL_DEL_REPO>
-cd <NOMBRE_DEL_REPO>
+git clone https://github.com/ignacioRodriguezM/tpGrupo4Seguridad.git
+cd tpGrupo4Seguridad
 sudo apt update && sudo apt install -y python3-flask
