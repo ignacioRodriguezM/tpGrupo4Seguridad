@@ -31,7 +31,7 @@ Para que el laboratorio sea autocontenido, fácil de auditar y no requiera de co
 
 ---
 
-## 🛠️ Parte 1: Cómo dejar listo el laboratorio (Previa)
+## 🛠️ Cómo dejar listo el laboratorio (Previa)
 
 Toda la plataforma crea automáticamente la base de datos y los archivos de log necesarios al inicializarse.
 
@@ -58,7 +58,7 @@ Antes de empezar a exponer, dejen abiertas estas **3 herramientas**:
 
 ---
 
-## 🛡️ Parte 3: Cómo mitigar cada vulnerabilidad
+## 🛡️ Cómo mitigar cada vulnerabilidad
 
 | Vulnerabilidad | Causa en el código (`app.py`) | Solución en Producción |
 | :--- | :--- | :--- |
