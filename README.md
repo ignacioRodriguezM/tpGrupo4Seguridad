@@ -42,8 +42,7 @@ git clone https://github.com/ignacioRodriguezM/tpGrupo4Seguridad.git
 cd tpGrupo4Seguridad
 sudo apt update && sudo apt install -y python3-flask
 
-### **2. Levantar el servidor web**
-```bash
+### 2. Levantar el servidor web
 python3 app.py
 ```
 El servidor quedará corriendo en **`http://localhost:5000`**. Dejen esa terminal abierta.
