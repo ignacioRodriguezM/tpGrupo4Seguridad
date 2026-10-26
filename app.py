@@ -91,18 +91,28 @@ def log_activity(message):
 # ==========================================
 def init_environment():
     os.makedirs(PUBLIC_LOGS_DIR, exist_ok=True)
-    configure_logging()
-    activity_log_content = (
-        "[2026-10-15 09:15:44] INFO: Nuevo voto registrado en «¿Estás de acuerdo con el nuevo régimen de cursadas?». Votos por opción: A favor: 4; En contra: 3. Total de votos contabilizados: 7.\n"
-        "[2026-10-15 09:20:03] INFO: Nuevo voto registrado en «¿Estás de acuerdo con el nuevo régimen de cursadas?». Votos por opción: A favor: 5; En contra: 3. Total de votos contabilizados: 8.\n"
-    )
-    with open(os.path.join(PUBLIC_LOGS_DIR, "activity.log"), "w", encoding="utf-8") as f:
-        f.write(activity_log_content)
-    # app.log es dinámico: no se trunca al reiniciar la BD, así conserva los eventos
-    # reales de la ejecución. Se mantiene una copia pública para el flujo didáctico.
+
+
+    # Limpiar logs ANTES de configurar el logger
     for path in (os.path.join(LOGS_DIR, "app.log"), os.path.join(PUBLIC_LOGS_DIR, "app.log")):
-        if not os.path.exists(path):
-            open(path, "a", encoding="utf-8").close()
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("")
+    
+    configure_logging()
+
+
+    # Inicializar activity.log con fechas reales
+    with open(os.path.join(PUBLIC_LOGS_DIR, "activity.log"), "w", encoding="utf-8") as f:
+        f.write("")
+    log_activity("Nuevo voto registrado en «¿Estás de acuerdo con el nuevo régimen de cursadas?». Votos por opción: A favor: 4; En contra: 3. Total de votos contabilizados: 7.")
+    log_activity("Nuevo voto registrado en «¿Estás de acuerdo con el nuevo régimen de cursadas?». Votos por opción: A favor: 5; En contra: 3. Total de votos contabilizados: 8.")
+
+    app.logger.info("SYSTEM BOOT: Iniciando plataforma de encuestas universitarias v1.2")
+    app.logger.info("DB_CONNECT: host=db.internal.frba.utn.edu.ar port=5432 user=encuesta_app pass=********")
+    app.logger.debug("Cargando rutas de administracion...")
+    app.logger.warning("Endpoint de auditoria de desarrollo sigue activo: GET /api/admin/votes?vote_id=xxxx")
+    app.logger.info("Servidor escuchando en puerto 5000")
+            
 
     if os.path.exists(DB_NAME):
         os.remove(DB_NAME)
