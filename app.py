@@ -110,7 +110,7 @@ def init_environment():
     app.logger.info("SYSTEM BOOT: Iniciando plataforma de encuestas universitarias v1.2")
     app.logger.info("DB_CONNECT: host=db.internal.frba.utn.edu.ar port=5432 user=encuesta_app pass=********")
     app.logger.debug("Cargando rutas de administracion...")
-    app.logger.warning("Endpoint de auditoria de desarrollo sigue activo: GET /api/admin/votes?vote_id=xxxx")
+    app.logger.warning("Endpoint de auditoria de desarrollo sigue activo: GET /api/admin/votes?vote_id={}")
     app.logger.info("Servidor escuchando en puerto 5000")
             
 
