@@ -48,8 +48,8 @@ python3 app.py
 El servidor quedará corriendo en **`http://localhost:5000`**. Dejen esa terminal abierta.
 
 ### 3. Ejecución
-1. **Navegador Ventana Normal:** En `http://localhost:5000` (acá usamos al alumno atacante **`fede`**).
-2. **Navegador Ventana de Incógnito (para no pisar las cookies):** En `http://localhost:5000` (acá usamos a la víctima **`admin`**).
+1. **Navegador Ventana Normal:** En `http://localhost:5000` (acá usamos al alumno atacante **`fede`**, pass: 1234).
+2. **Navegador Ventana de Incógnito (para no pisar las cookies):** En `http://localhost:5000` (acá usamos a la víctima **`admin`**, pass: admin123).
 3. **Levantar el listener:
 ```
 python3 listener.py
