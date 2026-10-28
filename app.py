@@ -94,10 +94,8 @@ def init_environment():
     os.makedirs(PUBLIC_LOGS_DIR, exist_ok=True)
 
 
-    # Limpiar el log técnico antes de configurar el logger.
+    # Preservar logs/app.log; el logger agrega nuevas entradas sin truncar el archivo.
     os.makedirs(LOGS_DIR, exist_ok=True)
-    with open(os.path.join(LOGS_DIR, "app.log"), "w", encoding="utf-8") as f:
-        f.write("")
     # Eliminar el archivo público heredado si quedó de una ejecución anterior.
     old_public_app_log = os.path.join(PUBLIC_LOGS_DIR, "app.log")
     if os.path.exists(old_public_app_log):
@@ -124,7 +122,13 @@ def init_environment():
     conn = sqlite3.connect(DB_NAME)
     conn.set_trace_callback(lambda sql: app.logger.debug("SQL: %s", sql))
     c = conn.cursor()
-    c.execute("CREATE TABLE surveys (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL)")
+    c.execute("CREATE TABLE surveys (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, is_open INTEGER NOT NULL DEFAULT 1)")
+    c.execute("CREATE TABLE users (username TEXT PRIMARY KEY, password TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('alumno', 'admin', 'superadmin')))")
+    c.executemany("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", [
+        ("fede", "1234", "alumno"), ("luciana", "1234", "alumno"),
+        ("tomas", "1234", "alumno"), ("ignacio", "1234", "alumno"),
+        ("admin", "admin123", "admin"), ("superadmin", "superadmin123", "superadmin"),
+    ])
     c.execute("CREATE TABLE choices (id INTEGER PRIMARY KEY AUTOINCREMENT, survey_id INTEGER NOT NULL, label TEXT NOT NULL)")
     c.execute("""CREATE TABLE votes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -254,6 +258,34 @@ td { background: #fff; }
 .footer-inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .reset-demo { background: #fff; border-color: #fecdca; color: #b42318; white-space: nowrap; }
 .reset-demo:hover { background: #fff1f0; border-color: #fda29b; color: #912018; }
+
+.user-home-card { display:flex; align-items:center; justify-content:space-between; gap:20px; border-left:4px solid var(--brand); }
+.user-home-card h3 { margin:2px 0 0; font-size:18px; }
+.user-home-card p { margin:5px 0 0; }
+.user-section-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.user-section-heading h3 { margin:0; }
+.user-section-heading p { margin:5px 0 0; }
+.user-create-form { display:grid; grid-template-columns:1fr 1fr 1fr auto; align-items:end; gap:14px; margin-top:18px; }
+.user-create-form > div, .user-edit-form > div { min-width:0; }
+.user-create-form input, .user-edit-form input { margin-bottom:0; }
+.user-create-form .field-label, .user-edit-form .field-label { margin-top:0; }
+.user-create-button { min-height:44px; white-space:nowrap; }
+.user-list { border-top:1px solid var(--line); }
+.user-row { display:grid; grid-template-columns:minmax(160px, .8fr) minmax(400px, 2fr) auto; align-items:center; gap:18px; padding:18px 0; border-bottom:1px solid var(--line); }
+.user-identity { display:flex; align-items:center; gap:11px; min-width:0; }
+.user-identity > div { min-width:0; overflow-wrap:anywhere; }
+.user-avatar { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; border-radius:11px; background:var(--brand-soft); color:var(--brand); font-weight:800; }
+.user-edit-form { display:grid; grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) auto; align-items:end; gap:10px; margin:0; }
+.user-delete-form { margin:0; }
+.user-self-label { color:var(--muted); font-size:12px; font-weight:650; white-space:nowrap; }
+select { width:100%; min-height:44px; padding:10px 40px 10px 13px; border:1px solid #d0d7e2; border-radius:9px; background:#fff; color:var(--ink); font:inherit; font-size:14px; font-weight:550; outline:none; cursor:pointer; transition:border .15s, box-shadow .15s; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23667085' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; }
+select:focus { border-color:#8094f3; box-shadow:0 0 0 3px rgba(52,87,213,.12); }
+.btn-danger { background:#fff; color:var(--danger); border-color:#fecdca; }
+.btn-danger:hover { background:#fff1f0; color:#912018; border-color:#fda29b; }
+.user-row .btn { min-height:42px; white-space:nowrap; }
+@media (max-width:900px) { .user-create-form { grid-template-columns:1fr 1fr; } .user-row { grid-template-columns:1fr; gap:12px; } .user-edit-form { grid-template-columns:1fr 1fr auto; } .user-delete-form { justify-self:end; } }
+@media (max-width:560px) { .user-home-card { align-items:flex-start; flex-direction:column; } .user-create-form, .user-edit-form { grid-template-columns:1fr; } .user-create-button, .user-save-button { width:100%; } .user-delete-form { justify-self:stretch; } .user-delete-form .btn { width:100%; } .user-section-heading { align-items:flex-start; flex-direction:column; } }
+
 @media (max-width: 720px) {
   .topbar-inner { padding: 14px 16px; min-height: 68px; gap: 12px; }
   .footer-inner { align-items: flex-start; flex-direction: column; }
@@ -285,12 +317,12 @@ td { background: #fff; }
 HTML_TEMPLATE = """<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Portal de Encuestas Universitarias</title>""" + BASE_STYLE + """</head><body>
 <header class="topbar"><div class="topbar-inner">
   <a class="brand" href="/" aria-label="Portal de Encuestas Universitarias - Inicio"><span class="brand-mark">PU</span><span class="brand-copy"><span class="brand-name">Portal Universitario</span><span class="brand-caption">Sistema de encuestas académicas</span></span></a>
-  {% if user %}<div class="account-area"><div class="account"><span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c.7-3.5 3.2-5.3 7.2-5.3s6.5 1.8 7.2 5.3" stroke-linecap="round"/></svg></span><span class="account-meta"><span class="account-name">{{ user.username }}</span><span class="account-role">{% if user.role == 'admin' %}Administrador{% else %}Usuario{% endif %}</span></span></div><a href="/logout" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 17l5-5-5-5M15 12H3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" stroke-linecap="round"/></svg>Cerrar sesión</a></div>
+  {% if user %}<div class="account-area"><div class="account"><span class="avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.8 20c.7-3.5 3.2-5.3 7.2-5.3s6.5 1.8 7.2 5.3" stroke-linecap="round"/></svg></span><span class="account-meta"><span class="account-name">{{ user.username }}</span><span class="account-role">{% if user.role == 'superadmin' %}Superadministrador{% elif user.role == 'admin' %}Administrador{% else %}Usuario{% endif %}</span></span></div><a href="/logout" class="logout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 17l5-5-5-5M15 12H3" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" stroke-linecap="round"/></svg>Cerrar sesión</a></div>
   {% else %}<span class="muted">Acceso al portal</span>{% endif %}
 </div></header>
 {% if user %}<div class="nav-wrap"><nav class="nav" aria-label="Navegación principal">
-{% if user.role == 'admin' %}
-<a href="/" class="{% if view == 'home' %}active{% endif %}">Inicio</a><a href="/?view=create" class="{% if view == 'create' %}active{% endif %}">Crear encuesta</a><a href="/?view=admin_surveys" class="{% if view == 'admin_surveys' %}active{% endif %}">Encuestas respondidas</a><a href="/?view=logs" class="{% if view == 'logs' %}active{% endif %}">Actividad</a>
+{% if user.role in ('admin', 'superadmin') %}
+<a href="/" class="{% if view == 'home' %}active{% endif %}">Inicio</a><a href="/?view=create" class="{% if view == 'create' %}active{% endif %}">Crear encuesta</a><a href="/?view=admin_surveys" class="{% if view == 'admin_surveys' %}active{% endif %}">Encuestas</a><a href="/?view=logs" class="{% if view == 'logs' %}active{% endif %}">Actividad</a>{% if user.role == 'superadmin' %}<a href="/?view=users" class="{% if view == 'users' %}active{% endif %}">Usuarios</a>{% endif %}
 {% else %}
 <a href="/" class="{% if view == 'home' %}active{% endif %}">Inicio</a><a href="/?view=pending" class="{% if view == 'pending' %}active{% endif %}">Encuestas pendientes{% if pending %} <span style="margin-left:6px;opacity:.7">{{ pending|length }}</span>{% endif %}</a><a href="/?view=answered" class="{% if view == 'answered' %}active{% endif %}">Encuestas respondidas</a>
 {% endif %}
@@ -298,19 +330,20 @@ HTML_TEMPLATE = """<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\
 <main>
 {% if not user %}
 <section class="box login-card"><p class="eyebrow">Bienvenido/a</p><h1>Ingresá al portal</h1><p class="subtitle">Accedé para responder encuestas académicas o administrar sus resultados.</p>{% if login_error %}<div class="login-error" role="alert"><span class="login-error-icon">!</span><div><strong>No pudimos iniciar tu sesión</strong><br>El usuario o la contraseña son incorrectos. Revisá los datos e intentá nuevamente.</div></div>{% endif %}<form action="/login" method="POST"><label class="field-label" for="username">Usuario</label><input id="username" name="username" type="text" placeholder="Ingresá tu usuario" autocomplete="username" required><label class="field-label" for="password">Contraseña</label><input id="password" name="password" type="password" placeholder="Ingresá tu contraseña" autocomplete="current-password" required><button type="submit" class="btn">Iniciar sesión</button></form>
-{% elif user.role == 'admin' %}
-{% if view == 'home' %}<div class="page-heading"><p class="eyebrow">Administración</p><h1>Panel de administración</h1><p class="subtitle">Gestioná las encuestas, consultá los resultados y revisá la actividad del sistema.</p></div><div class="stat-grid"><a class="stat-card" href="/?view=create"><span class="stat-label">Gestión</span><span class="stat-value" style="font-size:20px">Crear encuesta</span><span class="muted">Publicá una nueva pregunta y sus opciones →</span></a><a class="stat-card" href="/?view=admin_surveys"><span class="stat-label">Resultados</span><span class="stat-value" style="font-size:20px">Ver encuestas</span><span class="muted">Consultá votos y comentarios →</span></a></div><section class="panel"><h3>Actividad del sistema</h3><p class="muted">Los registros de actividad están disponibles desde la sección Actividad de la barra de navegación.</p><a href="/?view=logs" class="btn btn-secondary">Consultar actividad</a></section>
+{% elif user.role in ('admin', 'superadmin') %}
+{% if view == 'home' %}<div class="page-heading"><p class="eyebrow">Administración</p><h1>Panel de administración</h1><p class="subtitle">Gestioná las encuestas, consultá los resultados y revisá la actividad del sistema.</p></div><div class="stat-grid"><a class="stat-card" href="/?view=create"><span class="stat-label">Gestión</span><span class="stat-value" style="font-size:20px">Crear encuesta</span><span class="muted">Publicá una nueva pregunta y sus opciones →</span></a><a class="stat-card" href="/?view=admin_surveys"><span class="stat-label">Resultados</span><span class="stat-value" style="font-size:20px">Ver encuestas</span><span class="muted">Consultá votos y comentarios →</span></a></div>{% if user.role == 'superadmin' %}<section class="panel user-home-card"><div class="user-home-copy"><span class="eyebrow">Superadministración</span><h3>Gestión de usuarios</h3><p class="muted">Creá cuentas, cambiá roles y actualizá contraseñas.</p></div><a href="/?view=users" class="btn">Administrar usuarios&nbsp; →</a></section>{% endif %}<section class="panel"><h3>Actividad del sistema</h3><p class="muted">Los registros de actividad están disponibles desde la sección Actividad de la barra de navegación.</p><a href="/?view=logs" class="btn btn-secondary">Consultar actividad</a></section>
 {% elif view == 'create' %}<div class="page-heading"><p class="eyebrow">Administración / Encuestas</p><h1>Crear encuesta</h1><p class="subtitle">Definí la pregunta y agregá las opciones de respuesta.</p></div><section class="panel"><form action="/admin/surveys/create" method="POST"><label class="field-label" for="title">Pregunta de la encuesta</label><input id="title" type="text" name="title" placeholder="Ej.: ¿Qué te pareció la cursada?" required><label class="field-label" for="choices">Opciones de respuesta</label><textarea id="choices" name="choices" placeholder="Una opción por línea&#10;Otra opción" required></textarea><p class="muted">Ingresá al menos dos opciones, una por línea.</p><button type="submit" class="btn">Crear encuesta</button></form></section>
-{% elif view == 'admin_surveys' %}<div class="page-heading"><p class="eyebrow">Administración / Resultados</p><h1>{% if selected %}Resultados de la encuesta{% else %}Encuestas respondidas{% endif %}</h1><p class="subtitle">Consultá el recuento de votos y los comentarios recibidos.</p></div>{% if not selected %}<section class="panel">{% if surveys %}<div class="list">{% for s in surveys %}<div class="list-item"><div><div class="item-title">{{ s.title }}</div><span class="item-meta">Encuesta académica</span></div><a class="btn btn-secondary btn-small" href="/?view=admin_surveys&survey_id={{ s.id }}">Ver resultados&nbsp; →</a></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">≡</div>No hay encuestas creadas todavía.</div>{% endif %}</section>{% endif %}
-{% if selected %}<a href="/?view=admin_surveys" class="back-link">← Volver a encuestas</a><section class="panel"><h3>{{ selected.title }}</h3><h4>Votos por opción</h4><table><tr><th>Opción</th><th>Cantidad de votos</th></tr>{% for r in admin_results[selected.id] %}<tr><td>{{ r.label }}</td><td><b>{{ r.count }}</b></td></tr>{% endfor %}</table><h4>Comentarios anónimos</h4>{% if admin_comments[selected.id] %}{% for comment in admin_comments[selected.id] %}<div class="comment-card">{{ comment.content | safe }}</div>{% endfor %}{% else %}<p class="muted">Todavía no hay comentarios.</p>{% endif %}</section>{% endif %}
+{% elif view == 'admin_surveys' %}<div class="page-heading"><p class="eyebrow">Administración / Resultados</p><h1>{% if selected %}Resultados de la encuesta{% else %}Encuestas{% endif %}</h1><p class="subtitle">Consultá el recuento de votos y los comentarios recibidos.</p></div>{% if not selected %}<section class="panel">{% if surveys %}<div class="list">{% for s in surveys %}<div class="list-item"><div><div class="item-title">{{ s.title }}</div><span class="item-meta">{% if s.is_open %}Abierta{% else %}Cerrada{% endif %}</span></div><div style="display:flex;gap:8px"><form action="/admin/surveys/{{ s.id }}/toggle" method="POST" style="margin:0"><button class="btn btn-small" type="submit">{% if s.is_open %}Cerrar{% else %}Reabrir{% endif %}</button></form><a class="btn btn-secondary btn-small" href="/?view=admin_surveys&survey_id={{ s.id }}">Ver resultados&nbsp; →</a></div></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">≡</div>No hay encuestas creadas todavía.</div>{% endif %}</section>{% endif %}
+{% if selected %}<a href="/?view=admin_surveys" class="back-link">← Volver a encuestas</a><section class="panel"><h3>{{ selected.title }}</h3><h4>Votos por opción</h4><table><tr><th>Opción</th><th>Cantidad de votos</th></tr>{% for r in admin_results[selected.id] %}<tr><td>{{ r.label }}</td><td><b>{{ r.count }}</b></td></tr>{% endfor %}</table><h4>Comentarios anónimos</h4>{% if admin_comments[selected.id] %}{% for comment in admin_comments[selected.id] %}<div class="comment-card">{{ comment.content | safe }}{% if selected.is_open %}<form action="/admin/comments/{{ comment.id }}/delete" method="POST"><button class="btn btn-small reset-demo">Eliminar comentario</button></form>{% endif %}</div>{% endfor %}{% else %}<p class="muted">Todavía no hay comentarios.</p>{% endif %}</section>{% endif %}
+{% elif view == 'users' and user.role == 'superadmin' %}<div class="page-heading"><p class="eyebrow">Administración / Usuarios</p><h1>Gestión de usuarios</h1><p class="subtitle">Creá y administrá las cuentas y sus permisos.</p></div><section class="panel"><div class="user-section-heading"><div><h3>Crear usuario</h3><p class="muted">Asigná un nombre de usuario, contraseña y nivel de acceso.</p></div></div><form class="user-create-form" action="/superadmin/users/create" method="POST"><div><label class="field-label" for="new-username">Usuario</label><input id="new-username" name="username" type="text" placeholder="Ej.: nombre.apellido" required></div><div><label class="field-label" for="new-password">Contraseña</label><input id="new-password" name="password" type="password" placeholder="Ingresá una contraseña" required></div><div><label class="field-label" for="new-role">Rol</label><select id="new-role" name="role"><option value="alumno">Usuario</option><option value="admin">Administrador</option><option value="superadmin">Superadministrador</option></select></div><button class="btn user-create-button" type="submit">＋ Crear usuario</button></form></section><section class="panel"><div class="user-section-heading"><div><h3>Usuarios existentes</h3><p class="muted">Actualizá el rol o la contraseña de cada cuenta.</p></div><span class="badge">{{ users|length }} usuarios</span></div>{% if users %}<div class="user-list">{% for account in users %}<article class="user-row"><div class="user-identity"><span class="user-avatar">{{ account.username[:1]|upper }}</span><div><strong>{{ account.username }}</strong><span class="item-meta">{% if account.role == 'alumno' %}Usuario{% elif account.role == 'admin' %}Administrador{% else %}Superadministrador{% endif %}</span></div></div><form class="user-edit-form" action="/superadmin/users/{{ account.username }}/update" method="POST"><div><label class="field-label" for="role-{{ loop.index }}">Rol</label><select id="role-{{ loop.index }}" name="role"><option value="alumno" {% if account.role == 'alumno' %}selected{% endif %}>Usuario</option><option value="admin" {% if account.role == 'admin' %}selected{% endif %}>Administrador</option><option value="superadmin" {% if account.role == 'superadmin' %}selected{% endif %}>Superadministrador</option></select></div><div><label class="field-label" for="password-{{ loop.index }}">Contraseña</label><input id="password-{{ loop.index }}" type="password" name="password" placeholder="Sin cambios"></div><button class="btn btn-secondary user-save-button" type="submit">Guardar</button></form>{% if account.username != user.username %}<form class="user-delete-form" action="/superadmin/users/{{ account.username }}/delete" method="POST"><button class="btn btn-danger" type="submit" aria-label="Eliminar usuario {{ account.username }}">Eliminar</button></form>{% else %}<span class="user-self-label">Tu cuenta</span>{% endif %}</article>{% endfor %}</div>{% else %}<div class="empty-state">Todavía no hay usuarios.</div>{% endif %}</section>
 {% elif view == 'logs' %}<div class="page-heading"><p class="eyebrow">Administración / Auditoría</p><h1>Actividad del sistema</h1><p class="subtitle">Consultá el registro de acciones relevantes realizadas en las encuestas.</p></div><section class="panel"><h3>Registro de actividad</h3><p class="muted">El archivo contiene eventos funcionales, como creación de encuestas y registro de votos.</p><a href="/admin/logs?file=activity.log" target="_blank" class="btn">Abrir log de actividad&nbsp; ↗</a></section>{% endif %}
 {% else %}
 {% if completed %}<section class="box" style="max-width:720px;margin:20px auto;text-align:center"><div class="empty-icon" style="background:#e8f7f2;color:#087e6e">✓</div><p class="eyebrow" style="color:#087e6e">Respuesta registrada</p><h1 style="font-size:26px">¡Encuesta completada!</h1><p class="subtitle" style="margin:10px auto 22px">Tu respuesta fue registrada correctamente. Gracias por participar.</p><a class="btn" href="/?view=pending">Volver a encuestas pendientes</a></section>
 {% elif view == 'home' %}<div class="page-heading"><p class="eyebrow">Mi espacio</p><h1>Hola, {{ user.username }}</h1><p class="subtitle">Desde acá podés gestionar tus encuestas y consultar las respuestas que ya enviaste.</p></div><div class="stat-grid"><a class="stat-card" href="/?view=pending"><span class="stat-label">Para responder</span><span class="stat-value">{{ pending|length }}</span><span class="muted">Encuestas pendientes →</span></a><a class="stat-card" href="/?view=answered"><span class="stat-label">Tu actividad</span><span class="stat-value">{{ answered|length }}</span><span class="muted">Encuestas respondidas →</span></a></div>
 {% elif view == 'pending' and not selected %}<div class="page-heading"><p class="eyebrow">Mis encuestas</p><h1>Encuestas pendientes</h1><p class="subtitle">Estas encuestas todavía están esperando tu respuesta.</p></div><section class="panel">{% if pending %}<div class="list">{% for s in pending %}<div class="list-item"><div><div class="item-title">{{ s.title }}</div><span class="item-meta">Encuesta pendiente de respuesta</span></div><a class="btn btn-small" href="/survey/{{ s.id }}?view=pending">Responder&nbsp; →</a></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">✓</div>No tenés encuestas pendientes.<br><span class="muted">¡Ya respondiste todas las disponibles!</span></div>{% endif %}</section>
-{% elif view == 'answered' and not selected %}<div class="page-heading"><p class="eyebrow">Mis encuestas</p><h1>Encuestas respondidas</h1><p class="subtitle">Consultá las respuestas que registraste anteriormente.</p></div><section class="panel">{% if answered %}<div class="list">{% for s in answered %}<div class="list-item"><div><div class="item-title">{{ s.title }}</div><span class="item-meta">Respuesta enviada</span></div><a class="btn btn-secondary btn-small" href="/survey/{{ s.id }}?view=answered">Ver respuesta&nbsp; →</a></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">☷</div>Todavía no respondiste ninguna encuesta.</div>{% endif %}</section>{% endif %}
-{% if selected and view == 'pending' and not completed %}<a href="/?view=pending" class="back-link">← Volver a encuestas pendientes</a><div class="page-heading"><p class="eyebrow">Encuestas / Responder</p><h1>{{ selected.title }}</h1><p class="subtitle">Seleccioná una opción. Si querés, podés agregar un comentario adicional.</p></div><section class="panel"><form action="/complete-survey" method="POST"><input type="hidden" name="survey_id" value="{{ selected.id }}"><h3>Tu respuesta</h3>{% for choice in choices %}<label class="choice-row"><input type="radio" name="choice_id" value="{{ choice.id }}" required> {{ choice.label }}</label>{% endfor %}<h4>Comentario adicional <span class="muted" style="font-weight:400">(opcional)</span></h4><p class="muted">Este comentario acompaña tu respuesta y será visible para el equipo administrador de forma anónima.</p><textarea name="content" placeholder="Escribí tu comentario aquí..."></textarea><button type="submit" class="btn">Enviar respuesta</button></form></section>
-{% elif selected and view == 'answered' %}<a href="/?view=answered" class="back-link">← Volver a encuestas respondidas</a><div class="page-heading"><p class="eyebrow">Mis encuestas / Respuesta enviada</p><h1>{{ selected.title }}</h1><p class="subtitle">Este es el detalle de tu respuesta registrada.</p></div><section class="panel"><h3>Tu respuesta</h3><p>{{ own_choice }}</p>{% if own_comment %}<h4>Tu comentario adicional</h4><div class="comment-card">{{ own_comment | safe }}</div>{% else %}<p class="muted">No agregaste un comentario.</p>{% endif %}</section>{% endif %}
+{% elif view == 'answered' and not selected %}<div class="page-heading"><p class="eyebrow">Mis encuestas</p><h1>Encuestas respondidas</h1><p class="subtitle">Consultá las respuestas que registraste anteriormente.</p></div><section class="panel">{% if answered %}<div class="list">{% for s in answered %}<div class="list-item"><div><div class="item-title">{{ s.title }}</div><span class="item-meta">{% if s.is_open %}Respuesta enviada{% else %}Respuesta enviada · Encuesta cerrada{% endif %}</span></div><a class="btn btn-secondary btn-small" href="/survey/{{ s.id }}?view=answered">Ver respuesta&nbsp; →</a></div>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">☷</div>Todavía no respondiste ninguna encuesta.</div>{% endif %}</section>{% endif %}
+{% if selected and view == 'pending' and not completed %}<a href="/?view=pending" class="back-link">← Volver a encuestas pendientes</a><div class="page-heading"><p class="eyebrow">Encuestas / Responder</p><h1>{{ selected.title }}</h1><p class="subtitle">Seleccioná una opción. Si querés, podés agregar un comentario adicional.</p></div><section class="panel"><form action="/complete-survey" method="POST"><input type="hidden" name="survey_id" value="{{ selected.id }}"><h3>Tu respuesta</h3>{% for choice in choices %}<label class="choice-row"><input type="radio" name="choice_id" value="{{ choice.id }}" required> {{ choice.label }}</label>{% endfor %}<h4>Comentario adicional <span class="muted" style="font-weight:400">(opcional)</span></h4><p class="muted"></p><textarea name="content" placeholder="Escribí tu comentario aquí..."></textarea><button type="submit" class="btn">Enviar respuesta</button></form></section>
+{% elif selected and view == 'answered' %}<a href="/?view=answered" class="back-link">← Volver a encuestas respondidas</a><div class="page-heading"><p class="eyebrow">Mis encuestas / Respuesta enviada</p><h1>{{ selected.title }}</h1><p class="subtitle">{% if selected.is_open %}Este es el detalle de tu respuesta registrada.{% else %}Esta encuesta está cerrada. Este es el detalle de tu respuesta registrada.{% endif %}</p></div><section class="panel"><h3>Tu respuesta</h3><p>{{ own_choice }}</p>{% if own_comment %}<h4>Tu comentario adicional</h4><div class="comment-card">{{ own_comment | safe }}</div>{% else %}<p class="muted">No agregaste un comentario.</p>{% endif %}</section>{% endif %}
 {% endif %}
 </main><footer class="footer"><div class="footer-inner"><span>Portal Universitario · Sistema de encuestas académicas</span><a href="/reset" class="btn btn-small reset-demo" onclick="return confirm('¿Reiniciar la demo? Se borrarán los votos, comentarios y encuestas creadas, y se restaurarán los datos iniciales.')">↻ Reiniciar demo</a></div></footer></body></html>"""
 
@@ -338,32 +371,39 @@ def log_request_end(response):
 def index():
     user = get_current_user()
     conn = db_connection()
-    surveys = conn.execute("SELECT id, title FROM surveys ORDER BY id").fetchall()
+    surveys = conn.execute("SELECT id, title, is_open FROM surveys ORDER BY id").fetchall()
     view = request.args.get("view", "home")
     selected_id = request.args.get("survey_id", type=int)
-    selected = conn.execute("SELECT id, title FROM surveys WHERE id=?", (selected_id,)).fetchone() if selected_id else None
+    selected = conn.execute("SELECT id, title, is_open FROM surveys WHERE id=?", (selected_id,)).fetchone() if selected_id else None
     pending, answered = [], []
+    users = []
     admin_results, admin_comments = {}, {}
     own_choice, own_comment = None, None
     choices = []
     completed = request.args.get("completed") == "1"
 
-    if user and user.get("role") == "admin":
+    if user and user.get("role") in ("admin", "superadmin"):
         for survey in surveys:
             admin_results[survey["id"]] = conn.execute("""SELECT ch.label, COUNT(v.id) AS count FROM choices ch
                 LEFT JOIN votes v ON v.choice_id=ch.id AND v.survey_id=ch.survey_id
                 WHERE ch.survey_id=? GROUP BY ch.id, ch.label ORDER BY ch.id""", (survey["id"],)).fetchall()
-            admin_comments[survey["id"]] = conn.execute("SELECT content FROM comments WHERE survey_id=? ORDER BY id", (survey["id"],)).fetchall()
+            admin_comments[survey["id"]] = conn.execute("SELECT id, content FROM comments WHERE survey_id=? ORDER BY id", (survey["id"],)).fetchall()
     elif user:
         username = user.get("username", "")
         for survey in surveys:
             vote = conn.execute("SELECT id FROM votes WHERE survey_id=? AND username=? LIMIT 1", (survey["id"], username)).fetchone()
-            (answered if vote else pending).append(survey)
+            if vote:
+                answered.append(survey)
+            elif survey["is_open"]:
+                pending.append(survey)
         if selected and view in ("pending", "answered"):
             vote = conn.execute("""SELECT v.choice_id, ch.label FROM votes v JOIN choices ch ON ch.id=v.choice_id
                 WHERE v.survey_id=? AND v.username=? LIMIT 1""", (selected["id"], username)).fetchone()
             if view == "pending" and vote:
                 # No permitir que una encuesta ya respondida se abra desde pendientes.
+                selected = None
+            elif not selected["is_open"] and not vote:
+                # Las encuestas cerradas solo siguen visibles para quien ya respondió.
                 selected = None
             elif view == "answered" and not vote:
                 selected = None
@@ -372,11 +412,13 @@ def index():
                 choices = conn.execute("SELECT id, label FROM choices WHERE survey_id=? ORDER BY id", (selected["id"],)).fetchall()
                 comment = conn.execute("SELECT content FROM comments WHERE survey_id=? AND author=?", (selected["id"], username)).fetchone()
                 own_comment = comment["content"] if comment else None
+    if user and user.get("role") == "superadmin" and view == "users":
+        users = conn.execute("SELECT username, role FROM users ORDER BY username").fetchall()
     conn.close()
     response = make_response(render_template_string(HTML_TEMPLATE, user=user, surveys=surveys, view=view,
         pending=pending, answered=answered, selected=selected, choices=choices,
         own_choice=own_choice, own_comment=own_comment, admin_results=admin_results,
-        admin_comments=admin_comments, completed=completed, login_error=request.args.get("login_error") == "1"))
+        admin_comments=admin_comments, users=users, completed=completed, login_error=request.args.get("login_error") == "1"))
     # Si quedó una cookie vieja en el navegador, borrarla al mostrar el login.
     if request.cookies.get("SESSION_TOKEN") and not user:
         response.delete_cookie("SESSION_TOKEN", path="/")
@@ -394,11 +436,14 @@ def survey_detail(survey_id):
     if not survey:
         conn.close()
         return "Encuesta no encontrada", 404
-    if user.get("role") == "admin":
+    if user.get("role") in ("admin", "superadmin"):
         conn.close()
         return redirect(url_for("index", view="admin_surveys", survey_id=survey_id))
     voted = conn.execute("SELECT id FROM votes WHERE survey_id=? AND username=?", (survey_id, user.get("username"))).fetchone()
+    is_open = conn.execute("SELECT is_open FROM surveys WHERE id=?", (survey_id,)).fetchone()["is_open"]
     conn.close()
+    if not voted and not is_open:
+        return redirect(url_for("index", view="pending"))
     if view == "answered" and voted:
         return redirect(url_for("index", view="answered", survey_id=survey_id))
     if voted:
@@ -411,23 +456,15 @@ def login():
     username = request.form.get("username", "").strip().lower()
     password = request.form.get("password", "").strip()
 
-    # Cuentas de alumnos para la demo. Todas comparten la contraseña 1234.
-    student_accounts = {
-        "fede": "9876543210",
-        "luciana": "9876543211",
-        "tomas": "9876543212",
-        "ignacio": "9876543213",
-    }
-
-    if username in student_accounts and password == "1234":
-        token = create_unsigned_jwt(student_accounts[username], username, "alumno")
-    elif username == "admin" and password == "admin123":
-        token = create_unsigned_jwt("1234567890", "admin", "admin")
-    else:
+    conn = db_connection()
+    account = conn.execute("SELECT username, password, role FROM users WHERE username=?", (username,)).fetchone()
+    conn.close()
+    if not account or account["password"] != password:
         app.logger.warning("Intento de login fallido para usuario=%s", username)
         return redirect(url_for("index", login_error=1)), 303
+    role = account["role"]
+    token = create_unsigned_jwt(account["username"], username, role)
 
-    role = "admin" if username == "admin" else "alumno"
     app.logger.info("Inicio de sesión exitoso: usuario=%s rol=%s", username, role)
     resp = make_response(redirect(url_for("index")))
     # Intencionalmente inseguro para la demostración del laboratorio.
@@ -448,7 +485,7 @@ def complete_survey():
     user = get_current_user()
     if not user:
         return "No autenticado", 401
-    if user.get("role") == "admin":
+    if user.get("role") in ("admin", "superadmin"):
         return "El administrador no puede responder encuestas desde este panel", 403
     survey_id = request.form.get("survey_id", type=int)
     choice_id = request.form.get("choice_id", type=int)
@@ -456,6 +493,10 @@ def complete_survey():
     if not survey_id or not choice_id:
         return "Encuesta u opción inválida", 400
     conn = db_connection()
+    status = conn.execute("SELECT is_open FROM surveys WHERE id=?", (survey_id,)).fetchone()
+    if not status or not status["is_open"]:
+        conn.close()
+        return "La encuesta está cerrada", 409
     choice = conn.execute("SELECT id FROM choices WHERE id=? AND survey_id=?", (choice_id, survey_id)).fetchone()
     existing = conn.execute("SELECT id FROM votes WHERE survey_id=? AND username=?", (survey_id, user.get("username"))).fetchone()
     if not choice:
@@ -516,13 +557,17 @@ def vote():
     user = get_current_user()
     if not user:
         return "No autenticado", 401
-    if user.get("role") == "admin":
+    if user.get("role") in ("admin", "superadmin"):
         return "El administrador no puede responder encuestas desde este panel", 403
     survey_id = request.form.get("survey_id", type=int)
     choice_id = request.form.get("choice_id", type=int)
     if not survey_id or not choice_id:
         return "Encuesta u opción inválida", 400
     conn = db_connection()
+    status = conn.execute("SELECT is_open FROM surveys WHERE id=?", (survey_id,)).fetchone()
+    if not status or not status["is_open"]:
+        conn.close()
+        return "La encuesta está cerrada", 409
     choice = conn.execute("SELECT id FROM choices WHERE id=? AND survey_id=?", (choice_id, survey_id)).fetchone()
     existing = conn.execute("SELECT id FROM votes WHERE survey_id=? AND username=?", (survey_id, user.get("username"))).fetchone()
     if not choice:
@@ -543,13 +588,17 @@ def add_comment():
     user = get_current_user()
     if not user:
         return "No autenticado", 401
-    if user.get("role") == "admin":
+    if user.get("role") in ("admin", "superadmin"):
         return "El administrador no puede comentar encuestas desde este panel", 403
     survey_id = request.form.get("survey_id", type=int)
     content = request.form.get("content", "").strip()
     if not survey_id or not content:
         return "El comentario no puede estar vacío", 400
     conn = db_connection()
+    status = conn.execute("SELECT is_open FROM surveys WHERE id=?", (survey_id,)).fetchone()
+    if not status or not status["is_open"]:
+        conn.close()
+        return "La encuesta está cerrada", 409
     voted = conn.execute("SELECT id FROM votes WHERE survey_id=? AND username=?", (survey_id, user.get("username"))).fetchone()
     if not voted:
         conn.close()
@@ -572,7 +621,7 @@ def add_comment():
 @app.route("/admin/surveys/create", methods=["POST"])
 def create_survey():
     user = get_current_user()
-    if not user or user.get("role") != "admin":
+    if not user or user.get("role") not in ("admin", "superadmin"):
         return "403 Forbidden - Se requiere rol de administrador", 403
     title = request.form.get("title", "").strip()
     options = [line.strip() for line in request.form.get("choices", "").splitlines() if line.strip()]
@@ -589,11 +638,97 @@ def create_survey():
     return redirect(url_for("index"))
 
 
+@app.route("/admin/surveys/<int:survey_id>/toggle", methods=["POST"])
+def toggle_survey(survey_id):
+    user = get_current_user()
+    if not user or user.get("role") not in ("admin", "superadmin"):
+        return "403 Forbidden", 403
+    conn = db_connection()
+    row = conn.execute("SELECT is_open FROM surveys WHERE id=?", (survey_id,)).fetchone()
+    if not row:
+        conn.close()
+        return "Encuesta no encontrada", 404
+    conn.execute("UPDATE surveys SET is_open=? WHERE id=?", (0 if row["is_open"] else 1, survey_id))
+    conn.commit(); conn.close()
+    return redirect(url_for("index", view="admin_surveys"))
+
+@app.route("/admin/comments/<int:comment_id>/delete", methods=["POST"])
+def delete_comment(comment_id):
+    user = get_current_user()
+    if not user or user.get("role") not in ("admin", "superadmin"):
+        return "403 Forbidden", 403
+    conn = db_connection()
+    row = conn.execute("SELECT survey_id FROM comments WHERE id=?", (comment_id,)).fetchone()
+    if not row:
+        conn.close()
+        return "Comentario no encontrado", 404
+    status = conn.execute("SELECT is_open FROM surveys WHERE id=?", (row["survey_id"],)).fetchone()
+    if not status or not status["is_open"]:
+        conn.close()
+        return "No se pueden eliminar comentarios de una encuesta cerrada", 409
+    conn.execute("DELETE FROM comments WHERE id=?", (comment_id,))
+    conn.commit(); conn.close()
+    return redirect(url_for("index", view="admin_surveys", survey_id=row["survey_id"]))
+
+@app.route("/superadmin/users/create", methods=["POST"])
+def create_user():
+    user = get_current_user()
+    if not user or user.get("role") != "superadmin":
+        return "403 Forbidden", 403
+    username = request.form.get("username", "").strip().lower()
+    password = request.form.get("password", "")
+    role = request.form.get("role", "")
+    if not username or not password or role not in ("alumno", "admin", "superadmin"):
+        return "Datos de usuario inválidos", 400
+    conn = db_connection()
+    try:
+        conn.execute("INSERT INTO users (username, password, role) VALUES (?, ?, ?)", (username, password, role))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return "El usuario ya existe", 409
+    conn.close()
+    return redirect(url_for("index", view="users"))
+
+@app.route("/superadmin/users/<username>/update", methods=["POST"])
+def update_user(username):
+    user = get_current_user()
+    if not user or user.get("role") != "superadmin":
+        return "403 Forbidden", 403
+    role = request.form.get("role", "")
+    password = request.form.get("password", "")
+    if role not in ("alumno", "admin", "superadmin"):
+        return "Rol inválido", 400
+    if username == user.get("username") and role != "superadmin":
+        return "No podés quitarte el rol de superadministrador", 400
+    conn = db_connection()
+    if not conn.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+        conn.close()
+        return "Usuario no encontrado", 404
+    if password:
+        conn.execute("UPDATE users SET password=?, role=? WHERE username=?", (password, role, username))
+    else:
+        conn.execute("UPDATE users SET role=? WHERE username=?", (role, username))
+    conn.commit(); conn.close()
+    return redirect(url_for("index", view="users"))
+
+@app.route("/superadmin/users/<username>/delete", methods=["POST"])
+def delete_user(username):
+    user = get_current_user()
+    if not user or user.get("role") != "superadmin":
+        return "403 Forbidden", 403
+    if username == user.get("username"):
+        return "No podés eliminar tu propia cuenta", 400
+    conn = db_connection()
+    conn.execute("DELETE FROM users WHERE username=?", (username,))
+    conn.commit(); conn.close()
+    return redirect(url_for("index", view="users"))
+
 # PASO 3 del laboratorio: Path Traversal intencional.
 @app.route("/admin/logs")
 def admin_logs():
     user = get_current_user()
-    if not user or user.get("role") != "admin":
+    if not user or user.get("role") not in ("admin", "superadmin"):
         return "403 Forbidden - Se requiere rol de Administrador de Facultad", 403
     filename = request.args.get("file", "activity.log")
     filepath = os.path.join(PUBLIC_LOGS_DIR, filename)
@@ -610,7 +745,7 @@ def admin_logs():
 @app.route("/api/admin/votes")
 def api_admin_votes():
     user = get_current_user()
-    if not user or user.get("role") != "admin":
+    if not user or user.get("role") not in ("admin", "superadmin"):
         return jsonify({"error": "403 Forbidden - Acceso exclusivo para administradores"}), 403
     vote_id = request.args.get("vote_id", "1")
     raw_query = f"SELECT id, vote_token, survey_id, choice_id FROM votes WHERE id = {vote_id}"
