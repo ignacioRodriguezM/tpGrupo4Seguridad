@@ -26,11 +26,12 @@ def configure_logging():
             "%(asctime)s %(levelname)s %(name)s: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
-        for log_path in (os.path.join(LOGS_DIR, "app.log"), os.path.join(PUBLIC_LOGS_DIR, "app.log")):
-            handler = logging.FileHandler(log_path, mode="a", encoding="utf-8")
-            handler.setLevel(logging.DEBUG)
-            handler.setFormatter(formatter)
-            app.logger.addHandler(handler)
+        # El log técnico queda únicamente en logs/app.log, fuera del directorio público.
+        os.makedirs(LOGS_DIR, exist_ok=True)
+        handler = logging.FileHandler(os.path.join(LOGS_DIR, "app.log"), mode="a", encoding="utf-8")
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(formatter)
+        app.logger.addHandler(handler)
         app.logger.propagate = False
         app._file_logging_configured = True
     app.logger.info("Logger inicializado")
@@ -93,11 +94,15 @@ def init_environment():
     os.makedirs(PUBLIC_LOGS_DIR, exist_ok=True)
 
 
-    # Limpiar logs ANTES de configurar el logger
-    for path in (os.path.join(LOGS_DIR, "app.log"), os.path.join(PUBLIC_LOGS_DIR, "app.log")):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("")
-    
+    # Limpiar el log técnico antes de configurar el logger.
+    os.makedirs(LOGS_DIR, exist_ok=True)
+    with open(os.path.join(LOGS_DIR, "app.log"), "w", encoding="utf-8") as f:
+        f.write("")
+    # Eliminar el archivo público heredado si quedó de una ejecución anterior.
+    old_public_app_log = os.path.join(PUBLIC_LOGS_DIR, "app.log")
+    if os.path.exists(old_public_app_log):
+        os.remove(old_public_app_log)
+
     configure_logging()
 
 
